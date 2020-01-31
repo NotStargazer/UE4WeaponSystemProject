@@ -76,13 +76,16 @@ public:
 
 protected:
 	
-	/** Fires a projectile. */
+	/** Fires weapon current in your hand. */
 	void FireCurrentWeapon();
 
+	/**When the amount of rounds being fired per click is >2 it will call this. Tracks the amount of times the weapon has fired in burstfire. */
 	void BurstFireCurrentWeapon();
 
+	/**Start firing, automatic fire and single fire. */
 	void StartFire();
 
+	/**Stop firing, when button is released or is single fire. */
 	void StopFire();
 
 	/** Resets HMD orientation and position in VR. */
@@ -138,6 +141,8 @@ public:
 	FORCEINLINE class UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 private:
+
+	/**Timer tracking fire intervals. */
 	struct FTimerHandle FireWeapon;
 
 };

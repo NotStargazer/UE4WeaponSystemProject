@@ -31,6 +31,10 @@ class AIDontUnderstandUE4Projectile : public AActor
 	UPROPERTY(EditAnywhere)
 		int SecondsToExplode = 3;
 
+	/** Damage projectile deals on impact */
+	UPROPERTY(EditAnywhere)
+		int Damage = 200;
+
 protected:
 
 public:

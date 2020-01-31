@@ -15,18 +15,6 @@ class IDONTUNDERSTANDUE4_API AWLauncher : public AWeapon
 	GENERATED_BODY()
 
 public:
-	//Props
-	UPROPERTY(EditAnywhere)
-		float MaxRange = 100000;
-
-	UPROPERTY(EditAnywhere)
-		float MaxDamageFalloffRange = 100000;
-
-	UPROPERTY(EditAnywhere)
-		float MinDamageFalloffRange = 100000;
-
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0", ClampMax = "100"))
-		float DamageFalloffPercentage = 0;
 
 	UPROPERTY()
 		AController* PlayerController;

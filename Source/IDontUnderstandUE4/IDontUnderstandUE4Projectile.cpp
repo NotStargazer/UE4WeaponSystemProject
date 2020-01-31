@@ -4,6 +4,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "Engine/World.h"
+#include "IDontUnderstandUE4/Enemy.h"
 
 AIDontUnderstandUE4Projectile::AIDontUnderstandUE4Projectile() 
 {
@@ -70,6 +71,17 @@ void AIDontUnderstandUE4Projectile::OnExplode()
 
 void AIDontUnderstandUE4Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
+	{
+		AEnemy* HitActor = Cast<AEnemy>(OtherActor);
+
+		if (HitActor)
+		{
+			HitActor->ApplyDamage(Damage);
+			Destroy();
+		}
+	}
+
 	// Only add impulse and destroy projectile if we hit a physics
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL) && OtherComp->IsSimulatingPhysics())
 	{

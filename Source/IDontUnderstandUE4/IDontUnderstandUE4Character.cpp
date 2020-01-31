@@ -147,18 +147,27 @@ void AIDontUnderstandUE4Character::SetupPlayerInputComponent(class UInputCompone
 
 void AIDontUnderstandUE4Character::FireCurrentWeapon()
 {
+	// Check if player has a weapon in hand
 	if (CurrentWeapon != nullptr)
 	{
+		// Make sure the weapon has ammo
 		if (CurrentWeapon->CurrentAmmo <= 0)
 		{
 			UE_LOG(LogTemp, Display, TEXT("Ammo: %d"), CurrentWeapon->CurrentAmmo);
 			return;
 		}
 
+		// Get the location and rotation of the player
 		const FRotator SpawnRotation = GetControlRotation();
 		const FVector SpawnLocation = GetTargetLocation();
 
+		// Fire weapon in hand
 		CurrentWeapon->Fire(SpawnLocation, SpawnRotation);
+
+		if (CurrentWeapon->IsSingleFire)
+		{
+			GetWorld()->GetTimerManager().SetTimer(FireWeapon, CurrentWeapon->FireCooldown, false);
+		}
 
 		// try and play the sound if specified
 		if (CurrentWeapon->FireSound != nullptr)
@@ -181,12 +190,16 @@ void AIDontUnderstandUE4Character::FireCurrentWeapon()
 
 void AIDontUnderstandUE4Character::BurstFireCurrentWeapon()
 {
+	// How many times the burst fire weapon has fired
 	static int FireIntervals;
 
+	// Check if player has a weapon in hand 
 	if (CurrentWeapon != nullptr)
 	{
+		// Check if weapon has exceded the amount of fire intervals this weapon has
 		if (FireIntervals < CurrentWeapon->BulletsFiredPerClick)
 		{
+			// Stop firing if no bullets are left
 			if (CurrentWeapon->CurrentAmmo <= 0)
 			{
 				UE_LOG(LogTemp, Display, TEXT("Ammo: %d"), CurrentWeapon->CurrentAmmo);
@@ -195,11 +208,12 @@ void AIDontUnderstandUE4Character::BurstFireCurrentWeapon()
 				return;
 			}
 
+			// Get player location and rotation
 			const FRotator SpawnRotation = GetControlRotation();
 			const FVector SpawnLocation = GetTargetLocation();
-
+			
+			// Fire weapon and increase intervals
 			CurrentWeapon->Fire(SpawnLocation, SpawnRotation);
-			UE_LOG(LogTemp, Display, TEXT("Damage: %d"), FireIntervals);
 			FireIntervals++;
 
 			// try and play the sound if specified
@@ -221,8 +235,11 @@ void AIDontUnderstandUE4Character::BurstFireCurrentWeapon()
 		}
 		else
 		{
+			//Intervals exceeded, reset
 			FireIntervals = 0;
 			GetWorld()->GetTimerManager().ClearTimer(FireWeapon);
+			//Fire cooldown
+			GetWorld()->GetTimerManager().SetTimer(FireWeapon, CurrentWeapon->FireCooldown, false);
 			return;
 		}
 	}
@@ -236,23 +253,33 @@ void AIDontUnderstandUE4Character::BurstFireCurrentWeapon()
 
 void AIDontUnderstandUE4Character::StartFire()
 {
-
+	// Fire cooldown
+	if (GetWorld()->GetTimerManager().IsTimerActive(FireWeapon))
+	{
+		return;
+	}
+	// Check if player is holding a weapon
 	if (CurrentWeapon != nullptr)
 	{
+		// Check weapon firemode
 		if (CurrentWeapon->IsSingleFire)
 		{
+			// Check how many bullets fired per click
 			if (CurrentWeapon->BulletsFiredPerClick <= 1)
 			{
+				//Single fire
 				FireCurrentWeapon();
 			}
 			else
 			{
+				//Burst fire
 				BurstFireCurrentWeapon();
 				GetWorld()->GetTimerManager().SetTimer(FireWeapon, this, &AIDontUnderstandUE4Character::BurstFireCurrentWeapon, CurrentWeapon->FireRateInterval, true);
 			}
 		}
 		else
 		{
+			//Automatic fire
 			FireCurrentWeapon();
 			GetWorld()->GetTimerManager().SetTimer(FireWeapon, this, &AIDontUnderstandUE4Character::FireCurrentWeapon, CurrentWeapon->FireRateInterval, true);
 		}
@@ -261,8 +288,10 @@ void AIDontUnderstandUE4Character::StartFire()
 
 void AIDontUnderstandUE4Character::StopFire()
 {
+	//Check if player has weapon
 	if (CurrentWeapon != nullptr)
 	{
+		//Check if weapon is automatic fire
 		if (!CurrentWeapon->IsSingleFire)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FireWeapon);
