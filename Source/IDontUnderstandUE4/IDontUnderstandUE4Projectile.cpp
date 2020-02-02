@@ -5,15 +5,12 @@
 #include "Components/SphereComponent.h"
 #include "Engine/World.h"
 #include "IDontUnderstandUE4/Enemy.h"
+#include "TimerManager.h"
 
-AIDontUnderstandUE4Projectile::AIDontUnderstandUE4Projectile() 
+AIDontUnderstandUE4Projectile::AIDontUnderstandUE4Projectile()
 {
 	/* I had thought this would work. bExplodes is set in the blueprint for each ammo type, so i thought it would be able to check this for individual actors. Guess not.
-	if (bExplodes)
-	{
-		UE_LOG(LogTemp, Display, TEXT("can explode"));
-		PrimaryActorTick.bCanEverTick = true;
-	}
+
 	*/
 
 	// Use a sphere as a simple collision representation
@@ -35,16 +32,7 @@ AIDontUnderstandUE4Projectile::AIDontUnderstandUE4Projectile()
 	ProjectileMovement->InitialSpeed = 5000.f;
 	ProjectileMovement->MaxSpeed = 5000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
-	/*
-	if (!bSticky)
-	{
-		ProjectileMovement->bShouldBounce = true;
-	}
-	else
-	{
-		ProjectileMovement->bShouldBounce = false;
-	}
-	*/
+
 	ProjectileMovement->bShouldBounce = true;
 
 	// Die after 3 seconds by default
@@ -52,33 +40,68 @@ AIDontUnderstandUE4Projectile::AIDontUnderstandUE4Projectile()
 
 }
 
-void AIDontUnderstandUE4Projectile::Tick(float DeltaTime)
+void AIDontUnderstandUE4Projectile::BeginPlay()
 {
-	Super::Tick(DeltaTime);
-	SecondsToExplode -= DeltaTime;
-	UE_LOG(LogTemp, Warning, TEXT("hi, %d"), SecondsToExplode);
-	if (SecondsToExplode <= 0.0)
+	Super::BeginPlay();
+	if (bSticky)
 	{
-		OnExplode();
+		ProjectileMovement->bShouldBounce = false;
 	}
+	else
+	{
+		ProjectileMovement->bShouldBounce = true;
+	}
+
+	if (bExplodes)
+	{
+		if (!GetWorld()->GetTimerManager().IsTimerActive(ExplosionTimer))
+		{
+			UE_LOG(LogTemp, Display, TEXT("ExplosionTimerStart"));
+
+			GetWorld()->GetTimerManager().SetTimer(ExplosionTimer, this, &AIDontUnderstandUE4Projectile::ExplosionTimerFunction, 1, false, SecondsToExplode);
+		}
+	}
+}
+
+void AIDontUnderstandUE4Projectile::ExplosionTimerFunction()
+{
+	GetWorld()->GetTimerManager().ClearTimer(ExplosionTimer);
+
+	OnExplode();
 }
 
 void AIDontUnderstandUE4Projectile::OnExplode()
 {
-	UE_LOG(LogTemp, Warning, TEXT("should explode now!"));
-	//Destroy();
+	FTransform Transform = this->GetActorTransform();
+	FVector Vector = Transform.GetTranslation();
+	FRotator Rotation = Transform.Rotator();
+
+	AActor* SpawnedActorRef = GetWorld()->SpawnActor<AActor>(ActorToSpawn, Vector, Rotation);
+
+	Destroy();
 }
 
 void AIDontUnderstandUE4Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
 	{
+
 		AEnemy* HitActor = Cast<AEnemy>(OtherActor);
 
 		if (HitActor)
 		{
 			HitActor->ApplyDamage(Damage);
-			Destroy();
+			if (!bSticky)
+			{
+				if (!bExplodes)
+				{
+					Destroy();
+				}
+				else
+				{
+					OnExplode();
+				}
+			}
 		}
 	}
 

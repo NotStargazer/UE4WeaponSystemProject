@@ -19,28 +19,32 @@ class AIDontUnderstandUE4Projectile : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	class UProjectileMovementComponent* ProjectileMovement;
 
+	/** Damage projectile deals on impact */
+	UPROPERTY(EditAnywhere)
+		int Damage = 200;
+
 	/** Whether projectile sticks to other things */
 	UPROPERTY(EditAnywhere)
-		bool bSticky = false;
+		bool bSticky;
 
 	/** Whether to explode after a set time */
 	UPROPERTY(EditAnywhere)
 		bool bExplodes;
 
-	/** Time to explosion (in seconds) */
+	/** Time until exploding (in seconds) */
 	UPROPERTY(EditAnywhere)
 		int SecondsToExplode = 3;
 
-	/** Damage projectile deals on impact */
+	FTimerHandle ExplosionTimer;
+
 	UPROPERTY(EditAnywhere)
-		int Damage = 200;
+		TSubclassOf<AActor> ActorToSpawn;
 
 protected:
+	virtual void BeginPlay();
 
 public:
 	AIDontUnderstandUE4Projectile();
-
-	virtual void Tick(float DeltaTime) override;
 
 	/** called when projectile hits something */
 	UFUNCTION()
@@ -49,11 +53,10 @@ public:
 	UFUNCTION()
 		void OnExplode();
 
+	void ExplosionTimerFunction();
+
 	/** Returns CollisionComp subobject **/
 	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }
 	/** Returns ProjectileMovement subobject **/
 	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
 };
-
-//set life to very high (1m?) and add code to make it explode after a few sec (adjustable)
-//secondary: create aoe effect
